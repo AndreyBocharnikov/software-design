@@ -16,16 +16,14 @@ public class GetProductsServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        HttpResponceWriter httpResponceWriter = new HttpResponceWriter(response);
         try {
-            HttpResponceWriter httpResponceWriter = new HttpResponceWriter(response);
             Database db = new Database();
             List<String> httpResult = db.getProductQuery();
             httpResponceWriter.addHtmlBody(httpResult, "");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        response.setContentType("text/html");
-        response.setStatus(HttpServletResponse.SC_OK);
+        httpResponceWriter.setContentTypeAndStatus("text/html", HttpServletResponse.SC_OK);
     }
 }
