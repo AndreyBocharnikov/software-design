@@ -7,8 +7,8 @@ import java.util.List;
 
 public class Database {
     @FunctionalInterface
-    public interface BiConsumerException<T, R> {
-        void accept(T t, R r) throws IOException, SQLException;
+    public interface ConsumerException<T> {
+        void accept(T t) throws IOException, SQLException;
     }
 
     private HttpServletResponse response;
@@ -17,11 +17,11 @@ public class Database {
         this.response = response;
     }
 
-    private void connectAndExecuteQuery(BiConsumerException<ResultSet, HttpServletResponse> processResultSet, String query) throws IOException, SQLException {
+    private void connectAndExecuteQuery(ConsumerException<ResultSet> processResultSet, String query) throws IOException, SQLException {
         try (Connection c = DriverManager.getConnection("jdbc:sqlite:test.db");
              Statement stmt = c.createStatement();
              ResultSet rs = stmt.executeQuery(query)) {
-            processResultSet.accept(rs, response);
+            processResultSet.accept(rs);
         }
     }
 
@@ -32,13 +32,7 @@ public class Database {
         }
     }
 
-    static private void printHTML(List<String> html_strings, HttpServletResponse response) throws IOException {
-        for (String str: html_strings) {
-            response.getWriter().println(str);
-        }
-    }
-
-    static private void getNameAndPrice(ResultSet rs, HttpServletResponse response) throws SQLException, IOException {
+    private void getNameAndPrice(ResultSet rs) throws SQLException, IOException {
         while (rs.next()) {
             String name = rs.getString("name");
             int price = rs.getInt("price");
@@ -46,7 +40,7 @@ public class Database {
         }
     }
 
-    static private void getFirstInt(ResultSet rs, HttpServletResponse response) throws SQLException, IOException {
+    private void getFirstInt(ResultSet rs) throws SQLException, IOException {
         if (rs.next()) {
             response.getWriter().println(rs.getInt(1));
         }
@@ -54,35 +48,35 @@ public class Database {
 
     public void getProductQuery() throws SQLException, IOException {
         response.getWriter().println("<html><body>");
-        connectAndExecuteQuery(Database::getNameAndPrice, "SELECT * FROM PRODUCT");
+        connectAndExecuteQuery(this::getNameAndPrice, "SELECT * FROM PRODUCT");
         response.getWriter().println("</body></html>");
     }
 
     public void maxQuery() throws SQLException, IOException {
         response.getWriter().println("<html><body>");
         response.getWriter().println("<h1>Product with max price: </h1>");
-        connectAndExecuteQuery(Database::getNameAndPrice, "SELECT * FROM PRODUCT ORDER BY PRICE DESC LIMIT 1");
+        connectAndExecuteQuery(this::getNameAndPrice, "SELECT * FROM PRODUCT ORDER BY PRICE DESC LIMIT 1");
         response.getWriter().println("</body></html>");
     }
 
     public void minQuery() throws SQLException, IOException {
         response.getWriter().println("<html><body>");
         response.getWriter().println("<h1>Product with min price: </h1>");
-        connectAndExecuteQuery(Database::getNameAndPrice, "SELECT * FROM PRODUCT ORDER BY PRICE LIMIT 1");
+        connectAndExecuteQuery(this::getNameAndPrice, "SELECT * FROM PRODUCT ORDER BY PRICE LIMIT 1");
         response.getWriter().println("</body></html>");
     }
 
     public void sumQuery() throws SQLException, IOException {
         response.getWriter().println("<html><body>");
         response.getWriter().println("Summary price: ");
-        connectAndExecuteQuery(Database::getFirstInt, "SELECT SUM(price) FROM PRODUCT");
+        connectAndExecuteQuery(this::getFirstInt, "SELECT SUM(price) FROM PRODUCT");
         response.getWriter().println("</body></html>");
     }
 
     public void countQuery() throws SQLException, IOException {
         response.getWriter().println("<html><body>");
         response.getWriter().println("Number of products: ");
-        connectAndExecuteQuery(Database::getFirstInt, "SELECT COUNT(*) FROM PRODUCT");
+        connectAndExecuteQuery(this::getFirstInt, "SELECT COUNT(*) FROM PRODUCT");
         response.getWriter().println("</body></html>");
     }
 }
